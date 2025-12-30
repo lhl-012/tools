@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<meta http-equiv="Cache-Control" content="max-age=31536000, public">
+		<!-- import CSS -->
+		<link rel="stylesheet" href="index.css?v=1.0">
+	</head>
+	<body>
+		<div id="app">
+			<el-input type="textarea" :autosize="{ minRows: 3, maxRows: 5 }" v-model="data"
+				placeholder="在此输入原始数据..."></el-input>
+			<br /><br />
+
+			<!-- URL 操作 -->
+			<el-button type="primary" round plain @click="urlencode" style="width:140px; margin:5px;">URL编码</el-button>
+			<el-button type="primary" round plain @click="urldecode" style="width:140px; margin:5px;">URL解码</el-button>
+			<br />
+
+			<!-- Base64 操作 -->
+			<el-button type="primary" round plain @click="base64encode"
+				style="width:140px; margin:5px;">Base64编码</el-button>
+			<el-button type="primary" round plain @click="base64decode"
+				style="width:140px; margin:5px;">Base64解码</el-button>
+			<br />
+
+			<!-- JSON 操作 -->
+			<el-button type="success" round plain @click="jsonFormat"
+				style="width:140px; margin:5px;">JSON格式化</el-button>
+			<el-button type="warning" round plain @click="jsonCompress"
+				style="width:140px; margin:5px;">JSON压缩</el-button>
+			<el-button type="danger" round plain @click="unescapeJSON" style="width:140px; margin:5px;">去除转义</el-button>
+			<br />
+			<el-input type="textarea" autosize v-model="result" placeholder="结果输出区..."></el-input>
+		</div>
+	</body>
+
+	<!-- import Vue before Element -->
+	<script src="vue.min.js?v=1.0"></script>
+	<!-- import JavaScript -->
+	<script src="index.js?v=1.0"></script>
+	<script>
+		new Vue({
+			el: '#app',
+			data() {
+				return {
+					data: '',
+					result: ''
+				}
+			},
+			methods: {
+				urlencode() {
+					this.result = encodeURIComponent(this.data)
+				},
+				urldecode() {
+					this.result = decodeURIComponent(this.data)
+				},
+				base64encode() {
+					this.result = window.btoa(unescape(encodeURIComponent(this.data)))
+				},
+				base64decode() {
+					let txt = this.data;
+					if (txt.startsWith('value=')) {
+						txt = txt.substring(6);
+					}
+					try {
+						this.result = decodeURIComponent(escape(window.atob(txt)));
+					} catch (e) {
+						this.result = '❌ Base64 解码失败：' + e.message;
+					}
+				},
+				jsonFormat() {
+					try {
+						const obj = JSON.parse(this.data);
+						this.result = JSON.stringify(obj, null, 4);
+					} catch (e) {
+						this.result = '❌ JSON 格式错误：' + e.message;
+					}
+				},
+				jsonCompress() {
+					try {
+						const obj = JSON.parse(this.data);
+						this.result = JSON.stringify(obj);
+					} catch (e) {
+						this.result = '❌ JSON 格式错误：' + e.message;
+					}
+				},
+				unescapeJSON() {
+					try {
+						// 先尝试直接解析被转义的 JSON 字符串
+						let str = this.data.trim();
+
+						// 如果字符串两边有引号，比如 "\"{\\\"a\\\":1}\"" 这种
+						if ((str.startsWith('"') && str.endsWith('"')) || (str.startsWith("'") && str.endsWith(
+							"'"))) {
+							str = str.substring(1, str.length - 1);
+						}
+
+						// 去除常见的反斜杠转义
+						str = str.replace(/\\(["\\/bfnrt]|u[0-9a-fA-F]{4})/g, match => {
+							try {
+								// 尝试用 JSON.parse 处理每个转义序列
+								return JSON.parse(`"${match}"`);
+							} catch {
+								return match;
+							}
+						});
+
+						// 如果是被包裹的 JSON，再解析格式化一次
+						try {
+							const obj = JSON.parse(str);
+							this.result = JSON.stringify(obj, null, 4);
+						} catch {
+							this.result = str;
+						}
+					} catch (e) {
+						this.result = '❌ 去除转义失败：' + e.message;
+					}
+				}
+			}
+		})
+	</script>
+</html>
